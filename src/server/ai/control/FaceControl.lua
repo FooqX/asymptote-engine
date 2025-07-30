@@ -1,48 +1,23 @@
 --!strict
 
-local FACE_ALIAS_ASSET_ID = {
-	Neutral = {
-		13716114520,
-		13873048302,
-		9806565498,
-		13873045657,
-		13716112954
-	},
-	Shocked = {
-		9806562460,
-		13689111514,
-		13873025400,
-		13873026765
-	},
-	Angry = {
-		13873040061,
-		13716274037,
-		9806560629,
-		13873041494,
-		13716272920
-	},
-	Unconscious = {
-		13873048302,
-		13716143698,
-		9806562460,
-		13873045657,
-		13716145376
-	}
-}
-
 --[=[
 	@class FaceControl
 
 	Controls the face decals of an Agent, allowing to change
-	face expressions.
+	face expressions, lip sync, etc.
 ]=]
 local FaceControl = {}
 FaceControl.__index = FaceControl
 
 export type FaceControl = typeof(setmetatable({} :: {
 	head: BasePart,
-	currentFaceAlias: FaceAlias,
-	currentFaceDecals: { Decal }
+	currentExpressionName: string,
+	currentExpressionDecals: { 
+		EYES: { Decal },
+		MOUTHS: { Decal },
+		BROWS: { Decal },
+		ADDITIONALS: { Decal }
+	}
 }, FaceControl))
 
 type FaceAlias = "Neutral"
@@ -51,32 +26,63 @@ type FaceAlias = "Neutral"
 	| "Unconscious"
 	| "None"
 
+type FaceExpression = {
+	name: string,
+	decalIds: { 
+		EYES: { number },
+		MOUTHS: { number },
+		BROWS: { number },
+		ADDITIONALS: { number }
+	}
+}
+
 function FaceControl.new(character: Model): FaceControl
+	local head = character:FindFirstChild("Head") :: BasePart
 	return setmetatable({
-		head = character:FindFirstChild("Head") :: BasePart,
-		currentFaceAlias = "None",
-		currentFaceDecals = {}
+		head = head,
+		currentExpressionName = FaceControl.setupHead(head),
+		currentExpressionDecals = {
+			EYES = {},
+			MOUTHS = {},
+			BROWS =  {},
+			ADDITIONALS = {}
+		}
 	}, FaceControl)
 end
 
-function FaceControl.setFace(self: FaceControl, faceAlias: FaceAlias): ()
-	-- TODO: Automatically remove the default smiley face from the rig if present
-	-- If you do not do this, the mf is gonna have some pennywise face shit
-	local isSame = self.currentFaceAlias == faceAlias -- fuck you typechecker
-	if isSame then return end
+--[=[
+	Overrides the current expression's mouth.
+]=]
+function FaceControl.setMouth(self: FaceControl, mouth: { number }): ()
+	
+end
 
-	-- TODO: Make a more performant way by replacing the asset ids
-	-- and name them
-	for _, decal in ipairs(self.currentFaceDecals) do
-		decal:Destroy()
-	end
-	table.clear(self.currentFaceDecals)
+--[=[
+	Sets the current expression's mouth if previously overridden by
+	calling `setMouth()`
+]=]
+function FaceControl.setDefaultExpressionMouth(self: FaceControl): ()
+	
+end
 
-	for _, id in ipairs(FACE_ALIAS_ASSET_ID[faceAlias]) do
-		local newDecal = self:createDecal(id :: number) -- how are you this fucking retarded
-		table.insert(self.currentFaceDecals, newDecal)
-	end
+--[=[
+	Overrides the current expression's eyes.
+]=]
+function FaceControl.setEyes(self: FaceControl, eyes: { number }): ()
+	
+end
 
+
+--[=[
+	Sets the current expression's eyes if previously overridden by
+	calling `setEyes()`
+]=]
+function FaceControl.setDefaultExpressionEyes(self: FaceControl): ()
+	
+end
+
+function FaceControl.setExpression(self: FaceControl, faceAlias: FaceAlias): ()
+	if self.currentFaceAlias == faceAlias then return end
 	self.currentFaceAlias = faceAlias
 end
 
@@ -87,6 +93,17 @@ function FaceControl.createDecal(self: FaceControl, assetId: number): Decal
 	newDecal.Parent = self.head:FindFirstChild("Face Decals") -- use the HDIfy plugin so it can have HD faces
 
 	return newDecal
+end
+
+function FaceControl.setupHead(head: BasePart): FaceAlias
+	local faceDecals = head:FindFirstChild("Face Decals") :: Folder
+	for _, decal in ipairs(faceDecals:GetChildren()) do
+		if decal:IsA("Decal") then
+			decal:Destroy()
+		end
+	end
+
+	return "None"
 end
 
 return FaceControl
