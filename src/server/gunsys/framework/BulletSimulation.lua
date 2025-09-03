@@ -5,7 +5,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local BulletTracerPayload = require(ReplicatedStorage.shared.network.BulletTracerPayload)
 local Draw = require(ReplicatedStorage.shared.thirdparty.Draw)
 
-local DEBUG_MODE = false
+local DEBUG_SERVER_BULLET_TRACERS = false
+local DEBUG_SERVER_RAYCAST_HIT_INST_NAME = true
 local PI = math.pi
 
 local activeBullets: { ServerBulletObject } = {}
@@ -17,16 +18,19 @@ workspace.DescendantAdded:Connect(function(inst)
 	elseif inst:IsA("BasePart") and not inst.CanCollide and not inst.Parent:FindFirstChildOfClass("Humanoid") then
 		table.insert(sharedRayIgnoreList, inst)
 	end
+
+	print("descendant added:", inst)
 end)
 
-workspace.DescendantRemoving:Connect(function(WHAT)
-	local findthing = table.find(sharedRayIgnoreList, WHAT)
+workspace.DescendantRemoving:Connect(function(inst)
+	local findthing = table.find(sharedRayIgnoreList, inst)
 	if findthing then
 		table.remove(sharedRayIgnoreList, findthing)
 	end
+	print("descendant removed:", inst)
 end)
 
-for i,v in pairs(workspace:GetDescendants()) do
+for i, v in pairs(workspace:GetDescendants()) do
 	if v:IsA("Accessory") or v:IsA("Hat") or v.Name == "HumanoidRootPart" then
 		table.insert(sharedRayIgnoreList, v)
 	elseif v:IsA("BasePart") and not v.CanCollide and not v.Parent:FindFirstChildOfClass("Humanoid") then
@@ -101,7 +105,7 @@ function BulletSimulation.stepBullets(deltaTime: number): ()
 		local rayDir = right * (-(bulletObj.currentSpeed) * deltaTime * 31)
 		local hit = workspace:Raycast(rayOrigin, rayDir, bulletObj.raycastParams)
 
-		if DEBUG_MODE then
+		if DEBUG_SERVER_BULLET_TRACERS then
 			if hit then
 				Debris:AddItem(Draw.line(rayOrigin, hit.Position, Color3.new(0, 1, 0)), 0.1)
 				Debris:AddItem(Draw.point(hit.Position, Color3.new(0, 1, 1)), 0.1)
@@ -112,6 +116,9 @@ function BulletSimulation.stepBullets(deltaTime: number): ()
 
 		if hit then
 			local instHit = hit.Instance
+			if DEBUG_SERVER_RAYCAST_HIT_INST_NAME then
+				print("Server-side bullet hit:", instHit)
+			end
 			if not instHit or not instHit.Parent then
 				-- Advance bookkeeping and continue
 				bulletObj.currentSpeed = bulletObj.currentSpeed - (10 * deltaTime)

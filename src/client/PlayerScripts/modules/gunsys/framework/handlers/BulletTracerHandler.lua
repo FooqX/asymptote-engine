@@ -14,10 +14,13 @@ local LOCAL_PLAYER = Players.LocalPlayer
 local BULLET_INST_NAME = "GunSysBullet"
 local MUZZLE_FLASH_INST_NAME = "GunSysMuzzleFlash"
 local MUZZLE_FLASH_LIFE_TIME = 0.025
-local DEBUG_MODE = SharedConstants.DEBUG_BULLET_TRACERS
+local DEBUG_CLIENT_RAYCAST_HIT_INST_NAME = true
 local PI = math.pi
 local WHITE = Color3.new(1, 1, 1)
 local PISS_YELLOW = Color3.new(1, 0.866667, 0) -- (≖_≖ )
+local RED = Color3.new(1, 0, 0)
+local GREEN = Color3.new(0, 1, 0)
+local CYAN = Color3.new(0, 1, 1)
 
 local activeBullets: { BulletObject } = {}
 
@@ -85,17 +88,21 @@ function BulletTracerHandler.update(deltaTime: number): ()
 		local rayDir = right * (-(bulletObj.currentSpeed) * deltaTime * 31)
 		local hit = workspace:Raycast(rayOrigin, rayDir, bulletObj.raycastParams)
 
-		if DEBUG_MODE then
+		if SharedConstants.DEBUG_BULLET_TRACERS then
 			if hit then
-				Debris:AddItem(Draw.line(rayOrigin, hit.Position, Color3.new(0, 1, 0)), 0.1)
-				Debris:AddItem(Draw.point(hit.Position, Color3.new(0, 1, 1)), 0.1)
+				Debris:AddItem(Draw.line(rayOrigin, hit.Position, GREEN), 0.1)
+				Debris:AddItem(Draw.point(hit.Position, CYAN), 0.1)
 			else
-				Debris:AddItem(Draw.ray(Ray.new(rayOrigin, rayDir), Color3.new(1, 0, 0)), 0.1)
+				Debris:AddItem(Draw.ray(Ray.new(rayOrigin, rayDir), RED), 0.1)
 			end
 		end
 
 		if hit then
 			local instHit = hit.Instance
+			if DEBUG_CLIENT_RAYCAST_HIT_INST_NAME then
+				print("Client-side bullet hit:", instHit)
+			end
+
 			if not instHit.Parent then
 				-- Advance bookkeeping and continue
 				bulletObj.currentSpeed = bulletObj.currentSpeed - (10 * deltaTime)
